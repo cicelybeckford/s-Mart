@@ -41,6 +41,7 @@ typedef struct Store {
 //     int max_size;
 //     int next_order_number;
     int items_purchased;
+    int items_sold_out;
     int expected_num_purchases;
     pthread_mutex_t mutex;
 } sMart;
@@ -48,7 +49,7 @@ typedef struct Store {
 /**
  * Picks a random menu item and returns it.
  */
-MenuItem PickRandomMenuItem();
+int PickRandomStoreItem();
 
 /**
  * Creates a restaurant with a maximum size and the expected number of orders.
@@ -77,7 +78,7 @@ void CloseStore(sMart* smrt);
  *  - populate the order number of the order
  *  - return the order number
  */
-int Stock(sMart* smrt);
+int Restock(sMart* smrt, int index);
 
 /**
  * Gets an order from the restaurant. This funtion should:
@@ -89,6 +90,6 @@ int Stock(sMart* smrt);
  * that there are no orders left.
  */
 
-Order *Purchase(sMart* smrt);
+int Purchase(sMart* smrt, int index);
 
 #endif  // OSFINALPROJECT_SMART_H_
