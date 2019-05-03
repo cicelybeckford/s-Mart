@@ -7,7 +7,7 @@
 #include <stdbool.h>
 #include <string.h>
 
-#define ITEMS_LENGTH 10
+#define ITEMS_LENGTH 5
 
 // Let a menu item be a string.
 typedef char* ItemType;

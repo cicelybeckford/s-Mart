@@ -8,7 +8,7 @@
 // test your implementation.
 #define MCGOOGLES_SIZE 100
 #define NUM_CUSTOMERS 10
-#define NUM_STOCKERS ITEMS_LENGTH
+#define NUM_STOCKERS 5
 #define PURCHASES_PER_CUSTOMER 10
 #define EXPECTED_NUM_PURCHASES NUM_CUSTOMERS * PURCHASES_PER_CUSTOMER
 
@@ -59,6 +59,7 @@ void* sMartStocker(void* tid) {
     //Check if valid
     while (result >= 0){
         items_restocked++;
+        printf("Item #%d left in storage: %d\n", stocker_id, smrt->items[stocker_id]->storage_count);
         result = Restock(smrt, stocker_id);
     }
     
@@ -79,10 +80,10 @@ int main() {
     pthread_t stockers[NUM_STOCKERS];
     
     for (int i = 0; i < NUM_CUSTOMERS; i++) {
-        pthread_create(&(customers[i]), NULL, sMartCustomer, (void *)(long)i+1);
+        pthread_create(&(customers[i]), NULL, sMartCustomer, (void *)(long)i);
     }
     for (int i = 0; i < NUM_STOCKERS; i++) {
-        pthread_create(&(stockers[i]), NULL, sMartStocker, (void *)(long)i+1);
+        pthread_create(&(stockers[i]), NULL, sMartStocker, (void *)(long)i);
     }
     
     // Wait for all customer and cook threads.

@@ -12,16 +12,16 @@ Item* ConstructItem(int index);
 void DestroyItem(Item* item);
 
 
-ItemType Items[] = {"Eggs", "Milk", "Detergent", "Toothbrush", "Body Wash", "Water",
-                    "Meat", "Rice", "Vegetables", "Fruits"};
-int ShelfCount[] = {5, 6, 4, 5, 9, 6, 4, 10, 7, 8};
-int StorageCount[] = {53, 57, 20, 39, 12, 21, 40, 70, 65, 75};
+ItemType Items[] = {"Eggs", "Milk", "Detergent", "Toothbrush", "Body Wash"/*, "Water",
+                    "Meat", "Rice", "Vegetables", "Fruits"*/};
+int ShelfCount[] = {5, 6, 4, 5, 9/*, 6, 4, 10, 7, 8*/};
+int StorageCount[] = {53, 57, 20, 39, 12/*, 21, 40, 70, 65, 75*/};
 
-int ItemsLength = 10;
+int ItemsLength = 5;
 
 int PickRandomStoreItem() {
-    time_t t;
-    srand((unsigned)time(&t));
+//     time_t t;
+//     srand((unsigned)time(&t));
     return rand()%ItemsLength;
 }
 
@@ -58,10 +58,16 @@ void CloseStore(sMart* smrt) {
 
 int Restock(sMart* smrt, int index) {
     pthread_mutex_lock(&smrt->mutex);
+  
+    if (smrt->items[index]->storage_count == 0){
+        pthread_cond_signal(&smrt->items[index]->can_purchase);
+        pthread_mutex_unlock(&smrt->mutex);
+        return -1;
+    }
     
     // add to front if there are no orders
     while (ShelfFull(smrt->items[index])) {
-        if (smrt->items_purchased == smrt->expected_num_purchases 
+        if (smrt->items_purchased + smrt->items_sold_out == smrt->expected_num_purchases 
             || smrt->items[index]->storage_count == 0){
             pthread_cond_broadcast(&smrt->items[index]->can_stock);
             pthread_mutex_unlock(&smrt->mutex);
@@ -135,5 +141,5 @@ bool ShelfFull(Item* item) {
 }
 
 bool IsSoldOut(Item* item) {
-    return item->shelf_count == 0 && item->storage_count == 0;
+    return (item->shelf_count == 0 && item->storage_count == 0);
 }
