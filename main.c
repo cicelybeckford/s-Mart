@@ -60,6 +60,7 @@ void* sMartStocker(void* tid) {
     while (result >= 0){
         items_restocked++;
         printf("Item #%d left in storage: %d\n", stocker_id, smrt->items[stocker_id]->storage_count);
+        printf("Item #%d left in shelf: %d\n", stocker_id, smrt->items[stocker_id]->shelf_count);
         result = Restock(smrt, stocker_id);
     }
     

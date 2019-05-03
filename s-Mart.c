@@ -15,7 +15,7 @@ void DestroyItem(Item* item);
 ItemType Items[] = {"Eggs", "Milk", "Detergent", "Toothbrush", "Body Wash"/*, "Water",
                     "Meat", "Rice", "Vegetables", "Fruits"*/};
 int ShelfCount[] = {5, 6, 4, 5, 9/*, 6, 4, 10, 7, 8*/};
-int StorageCount[] = {53, 57, 20, 39, 12/*, 21, 40, 70, 65, 75*/};
+int StorageCount[] = {10, 10, 10, 10, 10/*, 21, 40, 70, 65, 75*/};
 
 int ItemsLength = 5;
 
@@ -34,6 +34,7 @@ sMart* OpenStore(int expected_num_purchases) {
         printf("%s\n", smrt->items[i]->item_type);
     }
     smrt->items_purchased = 0;
+    smrt->items_sold_out = 0;
     smrt->expected_num_purchases = expected_num_purchases;
     pthread_mutex_init(&smrt->mutex, NULL);
     
@@ -58,9 +59,11 @@ void CloseStore(sMart* smrt) {
 
 int Restock(sMart* smrt, int index) {
     pthread_mutex_lock(&smrt->mutex);
+    //pthread_mutex_lock(&smrt->items[index]->mutex);
   
     if (smrt->items[index]->storage_count == 0){
-        pthread_cond_signal(&smrt->items[index]->can_purchase);
+        //pthread_cond_signal(&smrt->items[index]->can_purchase);
+        pthread_cond_broadcast(&smrt->items[index]->can_stock);
         pthread_mutex_unlock(&smrt->mutex);
         return -1;
     }
@@ -83,12 +86,14 @@ int Restock(sMart* smrt, int index) {
     // set order number and increment the next order number
     
     pthread_cond_signal(&smrt->items[index]->can_purchase);
+    //pthread_mutex_unlock(&smrt->items[index]->mutex);
     pthread_mutex_unlock(&smrt->mutex);
     return index;
 }
 
 int Purchase(sMart* smrt, int index) {
     pthread_mutex_lock(&smrt->mutex);
+    //pthread_mutex_lock(&smrt->items[index]->mutex);
     
     while (ShelfEmpty(smrt->items[index])) {
         // if there are no orders left, notify other cooks
@@ -107,6 +112,7 @@ int Purchase(sMart* smrt, int index) {
     smrt->items_purchased++;
     
     pthread_cond_signal(&smrt->items[index]->can_stock);
+    //pthread_mutex_unlock(&smrt->items[index]->mutex);
     pthread_mutex_unlock(&smrt->mutex);
     return index;
 }
@@ -121,6 +127,7 @@ Item* ConstructItem(int index){
     item->max_shelf_size = ShelfCount[index];
     item->storage_count = StorageCount[index];
     item->sold_out = false;
+    //pthread_mutex_init(&item->mutex, NULL);
     pthread_cond_init(&item->can_purchase, NULL);
     pthread_cond_init(&item->can_stock, NULL);
     return item;

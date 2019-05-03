@@ -20,6 +20,7 @@ typedef struct ItemStruct {
     int storage_count;
     int max_shelf_size;
     bool sold_out;
+    //pthread_mutex_t mutex;
     pthread_cond_t can_purchase, can_stock;
 } Item;
 
