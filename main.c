@@ -36,6 +36,7 @@ void* sMartCustomer(void* tid) {
         else if (result == 0){
             total_purchases_attempted++;
             printf("Customer #%d tried to purchase item #%d but it was sold out\n", customer_id, item_index);
+          printf("%d items sold out\n", smrt->items_sold_out);
         }
         item_index = PickRandomStoreItem();
         result = Purchase(smrt, item_index);

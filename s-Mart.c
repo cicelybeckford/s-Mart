@@ -97,7 +97,7 @@ int Restock(sMart* smrt, int index) {
     pthread_cond_signal(&smrt->items[index]->can_purchase);
     //pthread_mutex_unlock(&smrt->items[index]->mutex);
     pthread_mutex_unlock(&smrt->mutex);
-    return result;
+    return index;
 }
 
 int Purchase(sMart* smrt, int index) {
@@ -112,17 +112,17 @@ int Purchase(sMart* smrt, int index) {
 //         }
 //     else {
     
-          while (ShelfEmpty(smrt->items[index])) {
-              //if there are no orders left, notify other cooks
-                  if (IsSoldOut(smrt->items[index])){
-                      pthread_cond_broadcast(&smrt->items[index]->can_purchase);
-                      pthread_cond_broadcast(&smrt->items[index]->can_stock);
-                      pthread_mutex_unlock(&smrt->mutex);
-                      if (smrt->items_sold_out == ItemsLength){
-                        return -1;
-                      }
-                      return 0;
+      while (ShelfEmpty(smrt->items[index])) {
+          //if there are no orders left, notify other cooks
+              if (IsSoldOut(smrt->items[index])){
+                  pthread_cond_broadcast(&smrt->items[index]->can_purchase);
+                  //pthread_cond_broadcast(&smrt->items[index]->can_stock);
+                  pthread_mutex_unlock(&smrt->mutex);
+                  if (smrt->items_sold_out == ItemsLength){
+                    return -1;
                   }
+                  return 0;
+              }
               // wait until the restaurant is no longer empty
               pthread_cond_wait(&smrt->items[index]->can_purchase, &smrt->mutex);
           }
@@ -135,6 +135,13 @@ int Purchase(sMart* smrt, int index) {
           else {
             pthread_cond_signal(&smrt->items[index]->can_stock);
           }
+          if (smrt->items_sold_out == ItemsLength){
+                  pthread_cond_broadcast(&smrt->items[index]->can_purchase);
+                  //pthread_cond_broadcast(&smrt->items[index]->can_stock);
+                  pthread_mutex_unlock(&smrt->mutex);
+                    return -1;
+          }
+          
     //}
     
     //pthread_mutex_unlock(&smrt->items[index]->mutex);
