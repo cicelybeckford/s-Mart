@@ -70,27 +70,30 @@ int Restock(sMart* smrt, int index) {
 //     }
     //else {
         // add to front if there are no orders
-      if (smrt->items[index]->storage_count == 0){
-              if (!IsSoldOut(smrt->items[index])){
-                  pthread_cond_signal(&smrt->items[index]->can_purchase);
-              }
-              pthread_mutex_unlock(&smrt->mutex);
-              return -1;
-          }
+//       if (smrt->items[index]->storage_count == 0){
+//               if (!IsSoldOut(smrt->items[index])){
+//                   pthread_cond_signal(&smrt->items[index]->can_purchase);
+//               }
+//               pthread_mutex_unlock(&smrt->mutex);
+//               return -1;
+//           }
       while (ShelfFull(smrt->items[index])) {
-          if (smrt->items[index]->storage_count == 0){
-              pthread_cond_broadcast(&smrt->items[index]->can_stock);
-              pthread_mutex_unlock(&smrt->mutex);
-              return -1;
-          }
+//           if (smrt->items[index]->storage_count == 0){
+//               pthread_cond_broadcast(&smrt->items[index]->can_stock);
+//               pthread_cond_signal(&smrt->items[index]->can_purchase);
+//               pthread_mutex_unlock(&smrt->mutex);
+//               return -1;
+//           }
           pthread_cond_wait(&smrt->items[index]->can_stock, &smrt->mutex);
       }
       smrt->items[index]->storage_count--;
       smrt->items[index]->shelf_count++;
-    //}
-    // add order to back
-//     smrt->items[index]->storage_count--;
-//     smrt->items[index]->shelf_count++;
+      if (smrt->items[index]->storage_count == 0){
+              //pthread_cond_broadcast(&smrt->items[index]->can_stock);
+              pthread_cond_signal(&smrt->items[index]->can_purchase);
+              pthread_mutex_unlock(&smrt->mutex);
+              return -1;
+          }
     
     // set order number and increment the next order number
     
@@ -119,7 +122,7 @@ int Purchase(sMart* smrt, int index) {
                   //pthread_cond_broadcast(&smrt->items[index]->can_stock);
                   pthread_mutex_unlock(&smrt->mutex);
                   if (smrt->items_sold_out == ItemsLength){
-                    return -1;
+                    return -1; //stop thread
                   }
                   return 0;
               }
@@ -149,7 +152,7 @@ int Purchase(sMart* smrt, int index) {
     return 1;
 }
 
-// Optional helper functions (you can implement if you think they would be useful)
+// Helper functions
 
 Item* ConstructItem(int index){
     Item* item = NULL;

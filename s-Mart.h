@@ -9,7 +9,7 @@
 
 #define ITEMS_LENGTH 5
 
-// Let a menu item be a string.
+// Store item is of type string
 typedef char* ItemType;
 
 // Contents of an Order.
@@ -24,18 +24,13 @@ typedef struct ItemStruct {
     pthread_cond_t can_purchase, can_stock;
 } Item;
 
-// A restuarant contains:
-//  - An array of orders
-//  - its current size (the number of orders currently handled by the restaurant)
-//  - its max size (the maximum number of orders the restaurant can handle)
-//  - The order number of the upcoming order
-//  - The number of orders fulfilled
-//  - The number of orders the restaurant expects to fulfill
+// A store contains:
+//  - An array of items
+//  - The number of items purchased
+//  - The number of items that are sold out
+//  - Expected number of purchases
 //  - Synchronization objects:
 //    - A lock, required to modify any part of the restaurant
-//    - condition variables, used to ensure the restaurant is only
-//      modified when it is able to receive orders (not full)
-//      or fulfill orders (not empty).
 typedef struct Store {
     Item* items[ITEMS_LENGTH];
 //     int current_size;
@@ -48,47 +43,45 @@ typedef struct Store {
 } sMart;
 
 /**
- * Picks a random menu item and returns it.
+ * Picks a random store item and returns it.
  */
 int PickRandomStoreItem();
 
 /**
- * Creates a restaurant with a maximum size and the expected number of orders.
- * Returns the restaurant.
+ * Creates a store with an expected number of purchases.
+ * Returns the store.
  * 
- * This function should:
- *  - allocate space for the restaurant
- *  - initialize all its variables
- *  - initialize its synchronization objects
+ * This function:
+ *  - allocates space for the store
+ *  - initializes all its variables
+ *  - initializes its synchronization object
  */
 sMart* OpenStore(int expected_num_purchases);
 
 /**
- * Closes the restaurant. This function should:
- *  - ensure all orders have been fulfilled
- *  - ensure the number of orders fulfilled matches the expected number of orders
- *  - destroy all the synchronization objects
- *  - free the space of the restaurant
+ * Closes the store. This function:
+ *  - ensures all orders have been fulfilled
+ *  - ensures the number of orders fulfilled matches the expected number of orders
+ *  - destroys all the synchronization objects
+ *  - frees the space of the store
  */
 void CloseStore(sMart* smrt);
   
 /**
- * Add an order to the restaurant. This function should:
- *  - Wait until the restaurant is not full
- *  - Add an order to the back of the orders queue
- *  - populate the order number of the order
- *  - return the order number
+ * Restock an item to the shelf. This function:
+ *  - waits until the shelf is not full
+ *  - adds the item to the shelf from storage
+ *  - returns the item
  */
 int Restock(sMart* smrt, int index);
 
 /**
- * Gets an order from the restaurant. This funtion should:
- *  - Wait until the restaurant is not empty
- *  - get an order from the front of the orders queue
- *  - return the order
+ * Gets an item from the shelf. This function:
+ *  - Waits until the shelf is not empty
+ *  - gets an item from the shelf
  * 
- * If there are no orders left, this function should notify the other cooks
- * that there are no orders left.
+ * If the item is sold out, this function will notify the other customers
+ * that this item is sold out.
  */
 
 int Purchase(sMart* smrt, int index);
