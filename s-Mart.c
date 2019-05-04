@@ -15,7 +15,7 @@ void DestroyItem(Item* item);
 ItemType Items[] = {"Eggs", "Milk", "Detergent", "Toothbrush", "Body Wash"/*, "Water",
                     "Meat", "Rice", "Vegetables", "Fruits"*/};
 int ShelfCount[] = {5, 6, 4, 5, 9/*, 6, 4, 10, 7, 8*/};
-int StorageCount[] = {10, 10, 10, 10, 10/*, 21, 40, 70, 65, 75*/};
+int StorageCount[] = {20, 20, 20, 20, 20/*, 21, 40, 70, 65, 75*/};
 
 int ItemsLength = 5;
 
@@ -59,62 +59,87 @@ void CloseStore(sMart* smrt) {
 
 int Restock(sMart* smrt, int index) {
     pthread_mutex_lock(&smrt->mutex);
+    int result;
     //pthread_mutex_lock(&smrt->items[index]->mutex);
   
-    if (smrt->items[index]->storage_count == 0){
-        //pthread_cond_signal(&smrt->items[index]->can_purchase);
-        pthread_cond_broadcast(&smrt->items[index]->can_stock);
-        pthread_mutex_unlock(&smrt->mutex);
-        return -1;
-    }
-    
-    // add to front if there are no orders
-    while (ShelfFull(smrt->items[index])) {
-        if (smrt->items_purchased + smrt->items_sold_out == smrt->expected_num_purchases 
-            || smrt->items[index]->storage_count == 0){
-            pthread_cond_broadcast(&smrt->items[index]->can_stock);
-            pthread_mutex_unlock(&smrt->mutex);
-            return -1;
-        }
-        pthread_cond_wait(&smrt->items[index]->can_stock, &smrt->mutex);
-    }
-
+//     if (smrt->items[index]->storage_count == 0 || smrt->items_purchased + smrt->items_sold_out == smrt->expected_num_purchases){
+//         //pthread_cond_signal(&smrt->items[index]->can_purchase);
+//         //pthread_cond_broadcast(&smrt->items[index]->can_stock);
+//         //pthread_mutex_unlock(&smrt->mutex);
+//         result = -1;
+//     }
+    //else {
+        // add to front if there are no orders
+      if (smrt->items[index]->storage_count == 0){
+              if (!IsSoldOut(smrt->items[index])){
+                  pthread_cond_signal(&smrt->items[index]->can_purchase);
+              }
+              pthread_mutex_unlock(&smrt->mutex);
+              return -1;
+          }
+      while (ShelfFull(smrt->items[index])) {
+          if (smrt->items[index]->storage_count == 0){
+              pthread_cond_broadcast(&smrt->items[index]->can_stock);
+              pthread_mutex_unlock(&smrt->mutex);
+              return -1;
+          }
+          pthread_cond_wait(&smrt->items[index]->can_stock, &smrt->mutex);
+      }
+      smrt->items[index]->storage_count--;
+      smrt->items[index]->shelf_count++;
+    //}
     // add order to back
-    smrt->items[index]->storage_count--;
-    smrt->items[index]->shelf_count++;
+//     smrt->items[index]->storage_count--;
+//     smrt->items[index]->shelf_count++;
     
     // set order number and increment the next order number
     
     pthread_cond_signal(&smrt->items[index]->can_purchase);
     //pthread_mutex_unlock(&smrt->items[index]->mutex);
     pthread_mutex_unlock(&smrt->mutex);
-    return index;
+    return result;
 }
 
 int Purchase(sMart* smrt, int index) {
     pthread_mutex_lock(&smrt->mutex);
+    int result;
     //pthread_mutex_lock(&smrt->items[index]->mutex);
+//     if (IsSoldOut(smrt->items[index])){
+//             smrt->items_sold_out++;
+//             //pthread_cond_broadcast(&smrt->items[index]->can_purchase);
+//             //pthread_mutex_unlock(&smrt->mutex);
+//             result = -1;
+//         }
+//     else {
     
-    while (ShelfEmpty(smrt->items[index])) {
-        // if there are no orders left, notify other cooks
-        if (IsSoldOut(smrt->items[index])){
-            smrt->items_sold_out++;
-            pthread_cond_broadcast(&smrt->items[index]->can_purchase);
-            pthread_mutex_unlock(&smrt->mutex);
-            return -1;
-        }
-        // wait until the restaurant is no longer empty
-        pthread_cond_wait(&smrt->items[index]->can_purchase, &smrt->mutex);
-    }
+          while (ShelfEmpty(smrt->items[index])) {
+              //if there are no orders left, notify other cooks
+                  if (IsSoldOut(smrt->items[index])){
+                      pthread_cond_broadcast(&smrt->items[index]->can_purchase);
+                      pthread_cond_broadcast(&smrt->items[index]->can_stock);
+                      pthread_mutex_unlock(&smrt->mutex);
+                      if (smrt->items_sold_out == ItemsLength){
+                        return -1;
+                      }
+                      return 0;
+                  }
+              // wait until the restaurant is no longer empty
+              pthread_cond_wait(&smrt->items[index]->can_purchase, &smrt->mutex);
+          }
+            // Get order from front of queue.
+          smrt->items[index]->shelf_count--;
+          smrt->items_purchased++;
+          if (IsSoldOut(smrt->items[index])){
+              smrt->items_sold_out++;
+          }
+          else {
+            pthread_cond_signal(&smrt->items[index]->can_stock);
+          }
+    //}
     
-    // Get order from front of queue.
-    smrt->items[index]->shelf_count--;
-    smrt->items_purchased++;
-    
-    pthread_cond_signal(&smrt->items[index]->can_stock);
     //pthread_mutex_unlock(&smrt->items[index]->mutex);
     pthread_mutex_unlock(&smrt->mutex);
-    return index;
+    return 1;
 }
 
 // Optional helper functions (you can implement if you think they would be useful)
@@ -136,6 +161,7 @@ Item* ConstructItem(int index){
 void DestroyItem(Item* item){
     pthread_cond_destroy(&item->can_purchase);
     pthread_cond_destroy(&item->can_stock);
+    free(item); 
     return;
 }
 

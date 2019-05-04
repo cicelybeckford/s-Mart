@@ -25,22 +25,38 @@ sMart *smrt;
 void* sMartCustomer(void* tid) {
     int customer_id = (int)(long) tid;
     int total_purchases_attempted = 0;
-    int item_index;
-    
-    for (int i = 0; i < PURCHASES_PER_CUSTOMER; i++) {
-        item_index = PickRandomStoreItem();
-        int result = Purchase(smrt, item_index);
-        if (result >= 0){
+    int item_index = PickRandomStoreItem();
+    int result = Purchase(smrt, item_index);
+  
+    while (result >= 0){
+        if (result == 1){
             total_purchases_attempted++;
-            printf("Customer #%d purchased item #%d\n", customer_id, result);
+            printf("Customer #%d purchased item #%d\n", customer_id, item_index);
         }
-        else{
+        else if (result == 0){
+            total_purchases_attempted++;
             printf("Customer #%d tried to purchase item #%d but it was sold out\n", customer_id, item_index);
         }
+        item_index = PickRandomStoreItem();
+        result = Purchase(smrt, item_index);
     }
     
+//     for (int i = 0; i < PURCHASES_PER_CUSTOMER; i++) {
+//         item_index = PickRandomStoreItem();
+//         int result = Purchase(smrt, item_index);
+//         if (result >= 0){
+//             total_purchases_attempted++;
+//             printf("Customer #%d purchased item #%d\n", customer_id, result);
+//         }
+//         else{
+//             total_purchases_attempted++;
+//             printf("Customer #%d tried to purchase item #%d but it was sold out\n", customer_id, item_index);
+//         }
+//         printf("cus\n");
+//     }
+    
     printf("Customer #%d attempted %d purchases\n", customer_id, total_purchases_attempted);
-	return NULL;
+	  return NULL;
 }
 
 /**
@@ -62,6 +78,8 @@ void* sMartStocker(void* tid) {
         printf("Item #%d left in storage: %d\n", stocker_id, smrt->items[stocker_id]->storage_count);
         printf("Item #%d left in shelf: %d\n", stocker_id, smrt->items[stocker_id]->shelf_count);
         result = Restock(smrt, stocker_id);
+        printf("%d - result  %d - stocker\n", result, stocker_id);
+        printf("stock\n");
     }
     
     printf("Stocker #%d restocked %d items\n", stocker_id, items_restocked);
@@ -82,16 +100,20 @@ int main() {
     
     for (int i = 0; i < NUM_CUSTOMERS; i++) {
         pthread_create(&(customers[i]), NULL, sMartCustomer, (void *)(long)i);
+        printf("cus thread\n");
     }
     for (int i = 0; i < NUM_STOCKERS; i++) {
         pthread_create(&(stockers[i]), NULL, sMartStocker, (void *)(long)i);
+        printf("stock thread\n");
     }
     
     // Wait for all customer and cook threads.
     for (int i = 0; i < NUM_CUSTOMERS; i++) {
+        printf("Joining Cust Thread %d...\n", i);
         pthread_join(customers[i], NULL);
     }
     for (int i = 0; i < NUM_STOCKERS; i++) {
+        printf("Joining Stock Thread %d...\n", i);
         pthread_join(stockers[i], NULL);
     }
     
