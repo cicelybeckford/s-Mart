@@ -5,8 +5,8 @@
 #include "s-Mart.h"
 
 #define MCGOOGLES_SIZE 100
-#define NUM_CUSTOMERS 10
-#define NUM_STOCKERS 5
+#define NUM_CUSTOMERS 50
+#define NUM_STOCKERS 10
 #define PURCHASES_PER_CUSTOMER 10
 #define EXPECTED_NUM_PURCHASES NUM_CUSTOMERS * PURCHASES_PER_CUSTOMER
 
@@ -26,32 +26,17 @@ void* sMartCustomer(void* tid) {
     int result = Purchase(smrt, item_index);
   
     while (result >= 0){
+        total_purchases_attempted++;
         if (result == 1){
             total_purchases_attempted++;
-//             printf("Customer #%d purchased item #%d\n", customer_id, item_index);
+            //printf("Customer #%d purchased item #%d\n", customer_id, item_index);
         }
         else if (result == 0){
-            total_purchases_attempted++;
-//             printf("Customer #%d tried to purchase item #%d but it was sold out\n", customer_id, item_index);
-//             printf("%d items sold out\n", smrt->items_sold_out);
+            //printf("Customer #%d tried to purchase item #%d but it was sold out\n", customer_id, item_index);
         }
         item_index = PickRandomStoreItem();
         result = Purchase(smrt, item_index);
     }
-    
-//     for (int i = 0; i < PURCHASES_PER_CUSTOMER; i++) {
-//         item_index = PickRandomStoreItem();
-//         int result = Purchase(smrt, item_index);
-//         if (result >= 0){
-//             total_purchases_attempted++;
-//             printf("Customer #%d purchased item #%d\n", customer_id, result);
-//         }
-//         else{
-//             total_purchases_attempted++;
-//             printf("Customer #%d tried to purchase item #%d but it was sold out\n", customer_id, item_index);
-//         }
-//         printf("cus\n");
-//     }
     
     printf("Customer #%d attempted %d purchases\n", customer_id, total_purchases_attempted);
 	  return NULL;
@@ -90,7 +75,7 @@ void* sMartStocker(void* tid) {
  *  - closes the store.
  */
 int main() {
-    smrt = OpenStore(EXPECTED_NUM_PURCHASES);
+    smrt = OpenStore();
     pthread_t customers[NUM_CUSTOMERS];
     pthread_t stockers[NUM_STOCKERS];
     
